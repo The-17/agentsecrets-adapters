@@ -1,0 +1,80 @@
+# Reference descriptor: cloudflare-api-token@1.2.0
+# Status: illustrative seed (must pass the plan §04 gate before listing).
+# Conforms to adapter spec v1 (schema/adapter-v1.json).
+
+meta:
+  id: cloudflare-api-token
+  version: 1.2.0
+  display_name: "Cloudflare API Token"
+  author: "@agentsecrets"
+  description: "Rotates Cloudflare user API tokens: creates a scoped replacement, verifies it, deletes the old one."
+  allowed_hosts:
+    - api.cloudflare.com
+
+auth:
+  primitive: bearer_token
+  credential_source: admin_credential
+  credential_field: api_token
+
+inputs:
+  target_name:
+    type: string
+    min_length: 1
+    max_length: 64
+    default: "agentsecrets-rotation"
+    description: "Name for the minted token"
+  policies:
+    type: string
+    max_length: 4096
+    description: "JSON-encoded permission policy document for the minted token"
+
+operations:
+  mint:
+    http:
+      method: POST
+      url: "https://api.cloudflare.com/client/v4/user/tokens"
+      headers:
+        Content-Type: "application/json"
+      body:
+        name: "${inputs.target_name}"
+        policies: "${inputs.policies}"
+        not_before: "${now_rfc3339}"
+    timeout_seconds: 15
+    extract:
+      new_credential: "$.result.value"
+    assert:
+      - path: "$.success"
+        equals: true
+
+  test:
+    http:
+      method: GET
+      url: "https://api.cloudflare.com/client/v4/user/tokens/verify"
+      auth_override:
+        primitive: bearer_token
+        credential_source: minted_credential
+    timeout_seconds: 15
+    assert:
+      - path: "$.success"
+        equals: true
+      - path: "$.result.status"
+        equals: "active"
+
+  retire:
+    http:
+      method: DELETE
+      url: "https://api.cloudflare.com/client/v4/user/tokens/${previous.provider_id}"
+    timeout_seconds: 15
+    assert:
+      - path: "$.success"
+        equals: true
+        allow_status: [200, 404]
+
+track:
+  provider_id: "$.result.id"
+
+limits:
+  max_retries: 2
+  retry_on: [429, 500, 502, 503]
+  max_response_bytes: 65536
+  step_timeout_seconds: 15

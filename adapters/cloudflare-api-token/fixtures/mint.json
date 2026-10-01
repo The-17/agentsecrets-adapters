@@ -1,0 +1,21 @@
+{
+  "operation": "mint",
+  "request_match": {
+    "method": "POST",
+    "host": "api.cloudflare.com",
+    "path": "/client/v4/user/tokens"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "result": {
+        "id": "CANARY_TOKEN_ID_001",
+        "value": "CANARY_MINTED_CREDENTIAL_001",
+        "name": "agentsecrets-rotation",
+        "status": "active"
+      }
+    }
+  },
+  "notes": "Canary strings stand in for secrets. If any CANARY_* value appears anywhere outside the declared extraction, the gate fails."
+}

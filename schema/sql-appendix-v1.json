@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/The-17/agentsecrets-adapters/schema/sql-appendix-v1.json",
+  "title": "Adapter spec v1 sql operation appendix (Postgres family)",
+  "description": "Refines the sql step shape for database providers. Statements are static parameterized text with executor-owned identifier quoting; params bind from inputs/credentials only. Normative prose: adapter-registry plan 02 section 2.7 (finalized at build).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length"],
+      "properties": {
+        "length": {
+          "type": "string",
+          "description": "Template resolving to an integer 16-256 (usually ${inputs.length_bytes})."
+        },
+        "alphabet": {
+          "type": "string",
+          "enum": ["quotable"],
+          "default": "quotable",
+          "description": "Executor-owned CSPRNG alphabet safe for SQL literals and URLs."
+        }
+      }
+    },
+    "set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement"],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "Static SQL with {{ident:name}} (executor-quoted identifier, bound to an input) and {{param:name}} (bound value: generated credential or input). No other interpolation; free ${...} in statements is rejected."
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dsn_role", "dsn_password"],
+      "properties": {
+        "dsn_role": {
+          "type": "string",
+          "description": "Template for the role to log in as (input-bound, never credential)."
+        },
+        "dsn_password": {
+          "type": "string",
+          "description": "One of ${minted_credential} (mint/test) or an input reference. Admin-credential references are rejected here: probes authenticate as the ROTATED identity, never the admin."
+        }
+      }
+    }
+  }
+}

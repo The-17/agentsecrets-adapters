@@ -1,0 +1,35 @@
+name: adapter-gate
+
+on:
+  pull_request:
+    paths:
+      - "adapters/**"
+      - "schema/**"
+
+jobs:
+  structural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate descriptors against JSON Schema
+        run: |
+          pip install check-jsonschema
+          for f in $(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'adapters/*/*.yaml'); do
+            echo "Checking $f"
+            python -c "import yaml,json; print(json.dumps(yaml.safe_load(open('$f'))))" > /tmp/desc.json
+            check-jsonschema --schemafile schema/adapter-v1.json /tmp/desc.json
+          done
+      - name: Secret-shaped string scan (fail closed)
+        run: |
+          if grep -rniE 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|-----BEGIN [A-Z ]*PRIVATE KEY' adapters/ schema/; then
+            echo "Secret-shaped content detected. Use CANARY_* sentinels in fixtures."
+            exit 1
+          fi
+
+  static-checks:
+    runs-on: ubuntu-latest
+    needs: structural
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static descriptor checks (hosts, auth, extraction)
+        run: echo "STATIC CHECKS: implemented in phase-2 executor tooling (plan 04 section 4.2). This job fails open until then — human review covers the gap."

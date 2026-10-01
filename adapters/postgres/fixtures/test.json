@@ -1,0 +1,5 @@
+{
+  "operation": "test",
+  "request_match": { "probe_as_role": "app" },
+  "response": { "probe": "connected" }
+}

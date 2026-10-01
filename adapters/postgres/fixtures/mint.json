@@ -1,0 +1,9 @@
+{
+  "operation": "mint",
+  "request_match": { "statement_contains": "ALTER ROLE" },
+  "response": {
+    "generated": "CANARY_MINTED_PASSWORD_001",
+    "probe": "connected"
+  },
+  "notes": "SQL fixture: statement shape + probe outcome. The gate asserts the statement uses bound parameters (no interpolated credential text) and the probe authenticates as the rotated role."
+}

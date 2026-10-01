@@ -1,0 +1,66 @@
+# Reference descriptor: postgres@1.0.0 (dogfood target)
+# Status: phase-1 migration target — re-expresses the hand-built Go
+# providers.Postgres adapter (B3, agentsecrets-cloud) as a descriptor using
+# the sql operation appendix. The Go adapter is deleted when this passes the
+# differential test (plan 08-rollout.md, phase 1 exit gate).
+
+meta:
+  id: postgres
+  version: 1.0.0
+  display_name: "PostgreSQL Role Password"
+  author: "@agentsecrets"
+  description: "Rotates a PostgreSQL role password: generates locally, pushes via ALTER ROLE, verifies with a fresh login. Capture-free by construction."
+  allowed_hosts: []
+
+auth:
+  primitive: postgres_dsn
+  credential_source: admin_credential
+  credential_field: dsn
+
+inputs:
+  target_role:
+    type: string
+    min_length: 1
+    max_length: 63
+    description: "Database role whose password rotates"
+  length_bytes:
+    type: integer
+    minimum: 16
+    maximum: 256
+    default: 32
+    description: "Generated password length"
+
+operations:
+  mint:
+    sql:
+      generate:
+        length: "${inputs.length_bytes}"
+      set:
+        statement: "ALTER ROLE {{ident:target_role}} WITH PASSWORD {{param:new_credential}}"
+      probe:
+        dsn_role: "${inputs.target_role}"
+        dsn_password: "${minted_credential}"
+    timeout_seconds: 10
+    extract:
+      new_credential: "$generated"
+    assert:
+      - probe: connected
+
+  test:
+    sql:
+      probe:
+        dsn_role: "${inputs.target_role}"
+        dsn_password: "${minted_credential}"
+    timeout_seconds: 10
+    assert:
+      - probe: connected
+
+  retire: null
+
+track: {}
+
+limits:
+  max_retries: 1
+  retry_on: []
+  max_response_bytes: 4096
+  step_timeout_seconds: 10

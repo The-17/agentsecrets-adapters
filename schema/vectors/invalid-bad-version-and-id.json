@@ -1,0 +1,36 @@
+{
+  "name": "invalid-bad-version-and-id",
+  "expect": "fail",
+  "expect_errors_contain": ["version", "id"],
+  "note": "Non-semver version and uppercase id must be structurally rejected.",
+  "descriptor": {
+    "meta": {
+      "id": "Example_Bad",
+      "version": "v1",
+      "display_name": "x",
+      "allowed_hosts": ["api.example.com"]
+    },
+    "auth": { "primitive": "bearer_token", "credential_source": "admin_credential" },
+    "inputs": {},
+    "operations": {
+      "mint": {
+        "http": { "method": "POST", "url": "https://api.example.com/t" },
+        "timeout_seconds": 15,
+        "extract": { "new_credential": "$.value" },
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "test": {
+        "http": { "method": "GET", "url": "https://api.example.com/v" },
+        "timeout_seconds": 15,
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "retire": null
+    },
+    "limits": {
+      "max_retries": 1,
+      "retry_on": [],
+      "max_response_bytes": 65536,
+      "step_timeout_seconds": 15
+    }
+  }
+}

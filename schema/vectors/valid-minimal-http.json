@@ -1,0 +1,45 @@
+{
+  "name": "valid-minimal-http",
+  "expect": "pass",
+  "note": "Smallest descriptor every validator must accept.",
+  "descriptor": {
+    "meta": {
+      "id": "example-min",
+      "version": "0.1.0",
+      "display_name": "Example Min",
+      "allowed_hosts": ["api.example.com"]
+    },
+    "auth": {
+      "primitive": "bearer_token",
+      "credential_source": "admin_credential",
+      "credential_field": "api_token"
+    },
+    "inputs": {
+      "target_name": { "type": "string", "min_length": 1, "max_length": 64 }
+    },
+    "operations": {
+      "mint": {
+        "http": {
+          "method": "POST",
+          "url": "https://api.example.com/tokens",
+          "body": { "name": "${inputs.target_name}" }
+        },
+        "timeout_seconds": 15,
+        "extract": { "new_credential": "$.value" },
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "test": {
+        "http": { "method": "GET", "url": "https://api.example.com/verify" },
+        "timeout_seconds": 15,
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "retire": null
+    },
+    "limits": {
+      "max_retries": 1,
+      "retry_on": [429, 503],
+      "max_response_bytes": 65536,
+      "step_timeout_seconds": 15
+    }
+  }
+}

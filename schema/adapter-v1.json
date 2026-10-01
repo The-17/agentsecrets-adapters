@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/The-17/agentsecrets-adapters/schema/adapter-v1.json",
+  "title": "AgentSecrets rotation adapter descriptor (spec v1)",
+  "description": "Structural schema for rotation adapter descriptors. Normative prose: docs repo adapter-registry/01-adapter-spec.md. Disagreement between prose and this file is a bug filed against this file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "auth", "inputs", "operations", "limits"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "display_name", "allowed_hosts"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "author": {
+          "type": "string",
+          "pattern": "^@[a-z0-9-]{1,39}$",
+          "description": "Set by the registry at submit; author-submitted values are overwritten."
+        },
+        "description": { "type": "string", "maxLength": 500 },
+        "allowed_hosts": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "description": "Registrable domain. Semantic checks (no IP/localhost/port, public-suffix validation, blocklists) are implemented per-validator, not in JSON Schema."
+          }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primitive", "credential_source"],
+      "properties": {
+        "primitive": {
+          "type": "string",
+          "enum": ["bearer_token", "basic", "api_key_header", "api_key_query", "aws_sigv4", "hmac", "postgres_dsn"]
+        },
+        "credential_source": { "type": "string", "enum": ["admin_credential", "minted_credential"] },
+        "credential_field": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "username_field": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "password_field": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "header_name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "param_name": { "type": "string", "pattern": "^[a-zA-Z0-9_-]{1,64}$" },
+        "service": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "region": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "algorithm": { "type": "string", "enum": ["sha256"] },
+        "signed_components": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["method", "path", "body_sha256", "timestamp"] }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "primitive": { "const": "basic" } } },
+          "then": { "required": ["username_field", "password_field"] }
+        },
+        {
+          "if": { "properties": { "primitive": { "const": "api_key_header" } } },
+          "then": { "required": ["header_name", "credential_field"] }
+        },
+        {
+          "if": { "properties": { "primitive": { "const": "api_key_query" } } },
+          "then": { "required": ["param_name", "credential_field"] }
+        },
+        {
+          "if": { "properties": { "primitive": { "const": "aws_sigv4" } } },
+          "then": { "required": ["service", "region", "credential_field"] }
+        },
+        {
+          "if": { "properties": { "primitive": { "const": "hmac" } } },
+          "then": { "required": ["header_name", "credential_field", "signed_components"] }
+        }
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "maxProperties": 16,
+      "propertyNames": {
+        "pattern": "^(?!(credential|secret|token|key|password|auth)$)[a-z][a-z0-9_]{0,63}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string", "enum": ["string", "integer", "boolean"] },
+          "min_length": { "type": "integer", "minimum": 0 },
+          "max_length": { "type": "integer", "minimum": 1 },
+          "minimum": { "type": "integer" },
+          "maximum": { "type": "integer" },
+          "description": { "type": "string", "maxLength": 200 },
+          "default": { "type": ["string", "integer", "boolean"] }
+        }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mint", "test", "retire"],
+      "properties": {
+        "precheck": { "$ref": "#/$defs/step" },
+        "mint": { "$ref": "#/$defs/step" },
+        "test": { "$ref": "#/$defs/step" },
+        "retire": { "anyOf": [{ "$ref": "#/$defs/step" }, { "type": "null" }] }
+      }
+    },
+    "track": {
+      "type": "object",
+      "maxProperties": 4,
+      "propertyNames": { "pattern": "^[a-z_]{1,32}$" },
+      "additionalProperties": { "$ref": "#/$defs/json_path" },
+      "default": {}
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_retries", "retry_on", "max_response_bytes", "step_timeout_seconds"],
+      "properties": {
+        "max_retries": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "retry_on": {
+          "type": "array",
+          "items": { "type": "integer", "enum": [408, 429, 500, 502, 503, 504] }
+        },
+        "max_response_bytes": { "type": "integer", "minimum": 4096, "maximum": 1048576 },
+        "step_timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 60 }
+      }
+    }
+  },
+  "$defs": {
+    "assertion": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": {
+            "path": { "$ref": "#/$defs/json_path" },
+            "equals": { "type": ["string", "number", "boolean"] },
+            "exists": { "type": "boolean" },
+            "one_of": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": { "type": ["string", "number", "boolean"] }
+            },
+            "allow_status": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 100, "maximum": 599 }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["probe"],
+          "properties": {
+            "probe": { "type": "string", "enum": ["connected"] }
+          },
+          "description": "SQL-appendix probe assertion: the fresh login connected. Only legal on sql steps."
+        }
+      ]
+    },
+    "json_path": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 256,
+      "pattern": "^(\\$\\.[A-Za-z0-9_\\[\\]\\.]+|\\$generated)$",
+      "description": "JSONPath subset: root, .field, [index]. $generated is the sql-appendix pseudo-path for locally generated values. No filters, wildcards, or expressions (enforced semantically; this pattern is a first pass)."
+    },
+    "template_string": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Static text with ${...} interpolation. Reference legality (allowed sources per position) is enforced semantically."
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeout_seconds", "assert"],
+      "properties": {
+        "http": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "url"],
+          "properties": {
+            "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+            "url": { "$ref": "#/$defs/template_string" },
+            "headers": {
+              "type": "object",
+              "maxProperties": 16,
+              "additionalProperties": { "$ref": "#/$defs/template_string" }
+            },
+            "body": {
+              "description": "Static JSON structure with string-leaf interpolation. Absent for GET/DELETE.",
+              "type": ["object", "array"]
+            },
+            "auth_override": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["primitive", "credential_source"],
+              "properties": {
+                "primitive": { "type": "string" },
+                "credential_source": { "type": "string", "enum": ["admin_credential", "minted_credential"] }
+              }
+            }
+          }
+        },
+        "sql": {
+          "type": "object",
+          "description": "Postgres-family operation shape, refined by schema/sql-appendix-v1.json (statements, params, probes)."
+        },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 60 },
+        "extract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["new_credential"],
+          "properties": {
+            "new_credential": { "$ref": "#/$defs/json_path" }
+          },
+          "description": "Mint ONLY. Exactly one mapping. Presence on non-mint steps is a semantic rejection."
+        },
+        "assert": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/assertion" }
+        }
+      },
+      "anyOf": [{ "required": ["http"] }, { "required": ["sql"] }]
+    }
+  }
+}

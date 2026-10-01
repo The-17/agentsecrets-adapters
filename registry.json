@@ -1,0 +1,36 @@
+{
+  "generated_by": "CI publish workflow (do not hand-edit; regenerates on merge)",
+  "spec_version": 1,
+  "adapters": [
+    {
+      "id": "postgres",
+      "namespace": "public",
+      "author": "@agentsecrets",
+      "display_name": "PostgreSQL Role Password",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "adapters/postgres/1.0.0.yaml",
+          "content_hash": "sha256:PENDING",
+          "status": "draft",
+          "note": "Dogfood target for phase-1 executor migration. Hash computed at publish."
+        }
+      ]
+    },
+    {
+      "id": "cloudflare-api-token",
+      "namespace": "public",
+      "author": "@agentsecrets",
+      "display_name": "Cloudflare API Token",
+      "versions": [
+        {
+          "version": "1.2.0",
+          "path": "adapters/cloudflare-api-token/1.2.0.yaml",
+          "content_hash": "sha256:PENDING",
+          "status": "draft",
+          "note": "Illustrative seed for the plan. Must pass the vetting gate before listing."
+        }
+      ]
+    }
+  ]
+}

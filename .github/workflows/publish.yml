@@ -1,0 +1,15 @@
+name: registry-publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "adapters/**"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Re-run full gate on merged tree
+        run: echo "PUBLISH: re-gate merged bytes, sign new versions, push to registry, regenerate registry.json. Implemented with the registry service (plan 08 phase 2). Until then this workflow is a placeholder that blocks nothing and publishes nothing."

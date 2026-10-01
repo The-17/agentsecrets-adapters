@@ -1,0 +1,39 @@
+{
+  "name": "invalid-reserved-input-double-extract",
+  "expect": "fail",
+  "expect_errors_contain": ["token", "extract"],
+  "note": "Reserved input name (token) and extract on a non-mint step must both be rejected (one structurally, one semantically).",
+  "descriptor": {
+    "meta": {
+      "id": "example-bad2",
+      "version": "0.1.0",
+      "display_name": "x",
+      "allowed_hosts": ["api.example.com"]
+    },
+    "auth": { "primitive": "bearer_token", "credential_source": "admin_credential" },
+    "inputs": {
+      "token": { "type": "string" }
+    },
+    "operations": {
+      "mint": {
+        "http": { "method": "POST", "url": "https://api.example.com/t" },
+        "timeout_seconds": 15,
+        "extract": { "new_credential": "$.value" },
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "test": {
+        "http": { "method": "GET", "url": "https://api.example.com/v" },
+        "timeout_seconds": 15,
+        "extract": { "new_credential": "$.other" },
+        "assert": [{ "path": "$.ok", "equals": true }]
+      },
+      "retire": null
+    },
+    "limits": {
+      "max_retries": 1,
+      "retry_on": [],
+      "max_response_bytes": 65536,
+      "step_timeout_seconds": 15
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "operation": "retire",
+  "request_match": {
+    "method": "DELETE",
+    "host": "api.cloudflare.com",
+    "path": "/client/v4/user/tokens/CANARY_TOKEN_ID_001"
+  },
+  "response": {
+    "status": 200,
+    "body": { "success": true, "result": { "id": "CANARY_TOKEN_ID_001" } }
+  }
+}

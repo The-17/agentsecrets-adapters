@@ -1,0 +1,15 @@
+{
+  "operation": "test",
+  "request_match": {
+    "method": "GET",
+    "host": "api.cloudflare.com",
+    "path": "/client/v4/user/tokens/verify"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "result": { "id": "CANARY_TOKEN_ID_001", "status": "active" }
+    }
+  }
+}
