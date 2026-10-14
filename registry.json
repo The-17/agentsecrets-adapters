@@ -3,32 +3,36 @@
   "spec_version": 1,
   "adapters": [
     {
-      "id": "postgres",
-      "namespace": "public",
-      "author": "@agentsecrets",
-      "display_name": "PostgreSQL Role Password",
-      "versions": [
-        {
-          "version": "1.0.0",
-          "path": "adapters/postgres/1.0.0.yaml",
-          "content_hash": "sha256:PENDING",
-          "status": "draft",
-          "note": "Dogfood target for phase-1 executor migration. Hash computed at publish."
-        }
-      ]
-    },
-    {
       "id": "cloudflare-api-token",
       "namespace": "public",
       "author": "@agentsecrets",
       "display_name": "Cloudflare API Token",
+      "description": "",
       "versions": [
         {
           "version": "1.2.0",
           "path": "adapters/cloudflare-api-token/1.2.0.yaml",
-          "content_hash": "sha256:PENDING",
-          "status": "draft",
-          "note": "Illustrative seed for the plan. Must pass the vetting gate before listing."
+          "content_hash": "sha256:e7bc782c6652b578b862438b25a1fb8234ed897b543a75ae73d54f2d72d16d43",
+          "status": "in_review",
+          "note": "Automated gate passed; awaiting human review.",
+          "spec_version": 1
+        }
+      ]
+    },
+    {
+      "id": "postgres",
+      "namespace": "public",
+      "author": "@agentsecrets",
+      "display_name": "PostgreSQL Role Password",
+      "description": "",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "adapters/postgres/1.0.0.yaml",
+          "content_hash": "sha256:4b42cba52172229f621fc34d320e2b107ee6ad0536ed03cc0aa9e4cf9c8bf0d7",
+          "status": "in_review",
+          "note": "Automated gate passed; awaiting human review.",
+          "spec_version": 1
         }
       ]
     }

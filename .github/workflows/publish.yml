@@ -1,15 +1,88 @@
 name: registry-publish
 
+# Merge = publish availability (plan 09.3), never activation. This workflow
+# re-gates the merged bytes, regenerates registry.json, applies review
+# verdicts, and commits the result. No human action publishes silently:
+# without a verdict:list signal nothing lists itself, and without a signing
+# key nothing gets signed.
+#
+# Required setup: repo secret REGISTRY_SIGNING_KEY (64 hex chars, 32-byte
+# Ed25519 seed). Until configured, publish fills hashes and moves statuses
+# but leaves signatures pending with a loud warning.
+
 on:
   push:
     branches: [main]
     paths:
       - "adapters/**"
+      - "schema/**"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    env:
+      REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
     steps:
       - uses: actions/checkout@v4
-      - name: Re-run full gate on merged tree
-        run: echo "PUBLISH: re-gate merged bytes, sign new versions, push to registry, regenerate registry.json. Implemented with the registry service (plan 08 phase 2). Until then this workflow is a placeholder that blocks nothing and publishes nothing."
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gate dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Gate unit tests
+        run: python -m pytest tools/ -q
+
+      - name: Full gate on merged tree (fail closed)
+        run: |
+          python tools/gate/gate.py check --all
+          python tools/gate/gate.py scan-secrets
+
+      - name: Resolve human verdict
+        id: verdict
+        run: |
+          VERDICT="none"
+          # 1. Merged-PR label (primary evidence: review happened on the PR).
+          LABELS=$(gh pr list --search "${{ github.sha }}" --state merged --json labels --jq '.[0].labels.[].name' 2>/dev/null || true)
+          if echo "$LABELS" | grep -qx "verdict:list"; then
+            VERDICT="list"
+          fi
+          # 2. Commit trailer (explicit maintainer verdict, e.g. direct pushes).
+          if git log -1 --format=%B | grep -q "^Registry-Verdict: list$"; then
+            VERDICT="list"
+          fi
+          echo "verdict=$VERDICT" >> "$GITHUB_OUTPUT"
+          echo "Verdict: $VERDICT"
+
+      - name: Regenerate registry
+        run: python tools/publish/regen.py --apply-verdict "${{ steps.verdict.outputs.verdict }}"
+
+      - name: Sign listed versions
+        run: python tools/publish/sign.py
+
+      - name: Verify signatures (fail closed when key configured)
+        if: env.REGISTRY_SIGNING_KEY != ''
+        run: python tools/publish/sign.py --verify-only
+
+      - name: Commit registry if changed
+        run: |
+          if git diff --quiet -- registry.json; then
+            echo "registry.json unchanged."
+          else
+            git config user.name "registry-bot"
+            git config user.email "registry-bot@agentsecrets.tech"
+            git add registry.json
+            git commit -m "registry: regenerate directory [skip ci]"
+            git push
+          fi
+
+      - name: Publish summary
+        run: |
+          python -c "import json; d=json.load(open('registry.json')); print('\n'.join(f\"{a['id']}@\"+v['version']+': '+v['status'] for a in d['adapters'] for v in a['versions']))"

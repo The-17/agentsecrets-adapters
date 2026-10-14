@@ -1,0 +1,5 @@
+# Pinned test/tooling deps for the adapter gate + publish pipeline.
+pyyaml>=6.0
+jsonschema>=4.20
+cryptography>=42.0
+pytest>=8.0
