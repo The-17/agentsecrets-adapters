@@ -13,9 +13,14 @@
           "version": "1.2.0",
           "path": "adapters/cloudflare-api-token/1.2.0.yaml",
           "content_hash": "sha256:e7bc782c6652b578b862438b25a1fb8234ed897b543a75ae73d54f2d72d16d43",
-          "status": "in_review",
-          "note": "Automated gate passed; awaiting human review.",
-          "spec_version": 1
+          "status": "listed",
+          "note": "Listed on human verdict (PR label verdict:list).",
+          "spec_version": 1,
+          "signature": {
+            "key_id": "e6b758cf48c2f797",
+            "public_key": "5d2cf811f29d9487287cd6c0a08fc7333a6b26305f26a1fab958cfe4467b339e",
+            "signature": "dbd16b8863fe178464a48d26320053a711ae21ec2cafa032d5fe465ebe237a1660ce69b26947cb1bbac79ed41eaa3180155b05981d81a1e3d538afc3485dc00d"
+          }
         }
       ]
     },
@@ -30,9 +35,14 @@
           "version": "1.0.0",
           "path": "adapters/postgres/1.0.0.yaml",
           "content_hash": "sha256:4b42cba52172229f621fc34d320e2b107ee6ad0536ed03cc0aa9e4cf9c8bf0d7",
-          "status": "in_review",
-          "note": "Automated gate passed; awaiting human review.",
-          "spec_version": 1
+          "status": "listed",
+          "note": "Listed on human verdict (PR label verdict:list).",
+          "spec_version": 1,
+          "signature": {
+            "key_id": "e6b758cf48c2f797",
+            "public_key": "5d2cf811f29d9487287cd6c0a08fc7333a6b26305f26a1fab958cfe4467b339e",
+            "signature": "bc23783f8f3ed6b2eed7929b4fad651bd0a0fca21352d322af958693bd43cfa4125714f31b9c2a606e24806487b1420b92d88483749e188436fc8e60a2012301"
+          }
         }
       ]
     }
